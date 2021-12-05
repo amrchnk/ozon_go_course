@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/amrchnk/ozon_go_course/bot/internal/service/product"
+	"github.com/amrchnk/ozon_go_course/bot/internal/app/commander"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joho/godotenv"
 	"log"
@@ -29,6 +30,7 @@ func main() {
 	}
 
 	productService:=product.NewService()
+	commander:=commander.NewCommander(bot,productService)
 
 	for update := range updates {
 		if update.Message == nil { // If we got a message
@@ -38,37 +40,14 @@ func main() {
 		command := update.Message.Command()
 		switch command {
 		case "help":
-			helpCommand(bot, update.Message)
+			commander.Help(update.Message)
 			continue
 		case "list":
-			listCommand(bot,update.Message,productService)
+			commander.List(update.Message)
 			continue
 		default:
-			defaultBehavior(bot, update.Message)
+			commander.Default(update.Message)
 		}
 	}
 }
 
-func helpCommand(bot *tgbotapi.BotAPI, inputMessage *tgbotapi.Message) {
-	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "/help - help\n/list - list products")
-	bot.Send(msg)
-}
-
-func listCommand(bot *tgbotapi.BotAPI, inputMessage *tgbotapi.Message,productService *product.Service) {
-	out:=""
-	products:=productService.List()
-	for _,p:=range products{
-		out+=p.Title+"\n"
-	}
-	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Products list:\n"+out)
-	bot.Send(msg)
-}
-
-func defaultBehavior(bot *tgbotapi.BotAPI, inputMessage *tgbotapi.Message) {
-	log.Printf("[%s] %s", inputMessage.From.UserName, inputMessage.Text)
-
-	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "You wrote: "+inputMessage.Text)
-	//msg.ReplyToMessageID = update.Message.MessageID
-
-	bot.Send(msg)
-}
