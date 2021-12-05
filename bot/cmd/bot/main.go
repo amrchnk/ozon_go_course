@@ -9,7 +9,7 @@ import (
 
 func main() {
 	godotenv.Load()
-	token:=os.Getenv("TOKEN")
+	token := os.Getenv("TOKEN")
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Panic(err)
@@ -22,19 +22,37 @@ func main() {
 	u := tgbotapi.UpdateConfig{
 		Timeout: 60,
 	}
-	updates,err := bot.GetUpdatesChan(u)
-	if err!=nil{
+	updates, err := bot.GetUpdatesChan(u)
+	if err != nil {
 		log.Panic(err)
 	}
 
 	for update := range updates {
-		if update.Message != nil { // If we got a message
-			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+		if update.Message == nil { // If we got a message
+			continue
+		}
 
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "You wrote: "+update.Message.Text)
-			//msg.ReplyToMessageID = update.Message.MessageID
-
-			bot.Send(msg)
+		command := update.Message.Command()
+		switch command {
+		case "help":
+			helpCommand(bot, update.Message)
+			continue
+		default:
+			defaultBehavior(bot, update.Message)
 		}
 	}
+}
+
+func helpCommand(bot *tgbotapi.BotAPI, inputMessage *tgbotapi.Message) {
+	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "/help - help")
+	bot.Send(msg)
+}
+
+func defaultBehavior(bot *tgbotapi.BotAPI, inputMessage *tgbotapi.Message) {
+	log.Printf("[%s] %s", inputMessage.From.UserName, inputMessage.Text)
+
+	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "You wrote: "+inputMessage.Text)
+	//msg.ReplyToMessageID = update.Message.MessageID
+
+	bot.Send(msg)
 }
