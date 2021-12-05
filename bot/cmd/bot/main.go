@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/amrchnk/ozon_go_course/bot/internal/service/product"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joho/godotenv"
 	"log"
@@ -27,6 +28,8 @@ func main() {
 		log.Panic(err)
 	}
 
+	productService:=product.NewService()
+
 	for update := range updates {
 		if update.Message == nil { // If we got a message
 			continue
@@ -37,6 +40,9 @@ func main() {
 		case "help":
 			helpCommand(bot, update.Message)
 			continue
+		case "list":
+			listCommand(bot,update.Message,productService)
+			continue
 		default:
 			defaultBehavior(bot, update.Message)
 		}
@@ -44,7 +50,17 @@ func main() {
 }
 
 func helpCommand(bot *tgbotapi.BotAPI, inputMessage *tgbotapi.Message) {
-	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "/help - help")
+	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "/help - help\n/list - list products")
+	bot.Send(msg)
+}
+
+func listCommand(bot *tgbotapi.BotAPI, inputMessage *tgbotapi.Message,productService *product.Service) {
+	out:=""
+	products:=productService.List()
+	for _,p:=range products{
+		out+=p.Title+"\n"
+	}
+	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Products list:\n"+out)
 	bot.Send(msg)
 }
 
