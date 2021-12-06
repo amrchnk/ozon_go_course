@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/amrchnk/ozon_go_course/bot/internal/service/product"
 	"github.com/amrchnk/ozon_go_course/bot/internal/app/commander"
+	"github.com/amrchnk/ozon_go_course/bot/internal/service/product"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joho/godotenv"
 	"log"
@@ -29,25 +29,10 @@ func main() {
 		log.Panic(err)
 	}
 
-	productService:=product.NewService()
-	commander:=commander.NewCommander(bot,productService)
+	productService := product.NewService()
+	commander := commander.NewCommander(bot, productService)
 
 	for update := range updates {
-		if update.Message == nil { // If we got a message
-			continue
-		}
-
-		command := update.Message.Command()
-		switch command {
-		case "help":
-			commander.Help(update.Message)
-			continue
-		case "list":
-			commander.List(update.Message)
-			continue
-		default:
-			commander.Default(update.Message)
-		}
+		commander.HandleUpdate(update)
 	}
 }
-

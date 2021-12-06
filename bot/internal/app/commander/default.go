@@ -13,3 +13,4 @@ func (c *Commander)Default(inputMessage *tgbotapi.Message) {
 
 	c.bot.Send(msg)
 }
+
