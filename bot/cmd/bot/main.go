@@ -1,38 +1,54 @@
 package main
 
 import (
-	"github.com/amrchnk/ozon_go_course/bot/internal/app/commander"
-	"github.com/amrchnk/ozon_go_course/bot/internal/service/product"
+	"github.com/amrchnk/ozon_go_course/bot/internal/config"
+	"github.com/amrchnk/ozon_go_course/bot/internal/repository"
+	"github.com/amrchnk/ozon_go_course/bot/internal/repository/boltDB"
+	telegram "github.com/amrchnk/ozon_go_course/bot/internal/service/telegram"
+	"github.com/boltdb/bolt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/joho/godotenv"
 	"log"
-	"os"
 )
 
 func main() {
-	godotenv.Load()
-	token := os.Getenv("TOKEN")
-	bot, err := tgbotapi.NewBotAPI(token)
+	cfg, err := config.Init()
+	bot, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
 	if err != nil {
 		log.Panic(err)
 	}
 
 	bot.Debug = true
-
-	log.Printf("Authorized on account %s", bot.Self.UserName)
-
-	u := tgbotapi.UpdateConfig{
-		Timeout: 60,
-	}
-	updates, err := bot.GetUpdatesChan(u)
+	db, err := initDB(cfg)
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
 
-	productService := product.NewService()
-	commander := commander.NewCommander(bot, productService)
+	productRepository:=boltDB.NewProductRepository(db)
 
-	for update := range updates {
-		commander.HandleUpdate(update)
+	tgBot:=telegram.NewBot(bot,productRepository)
+
+	go func(){
+		if err := tgBot.Start(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+}
+
+func initDB(cfg *config.Config) (*bolt.DB, error) {
+	db, err := bolt.Open(cfg.DBPath, 0600, nil)
+	if err != nil {
+		return nil, err
 	}
+
+	if err := db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte(repository.Product))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return db, nil
 }
