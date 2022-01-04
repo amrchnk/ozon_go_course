@@ -12,12 +12,17 @@ import (
 
 func main() {
 	cfg, err := config.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+	//log.Println("ENV:",cfg)
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
-
 	bot.Debug = true
+
+
 	db, err := initDB(cfg)
 	if err != nil {
 		log.Fatal(err)
@@ -27,11 +32,13 @@ func main() {
 
 	tgBot:=telegram.NewBot(bot,productRepository)
 
-	go func(){
-		if err := tgBot.Start(); err != nil {
-			log.Fatal(err)
-		}
-	}()
+	err = tgBot.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
+	/*go func(){
+
+	}()*/
 }
 
 func initDB(cfg *config.Config) (*bolt.DB, error) {
