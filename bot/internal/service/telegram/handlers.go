@@ -73,8 +73,13 @@ func (b *Bot) Get(inputMessage *tgbotapi.Message) error {
 func (b *Bot) Create(inputMessage *tgbotapi.Message){
 	product:=models.Product{}
 	json.Unmarshal([]byte(inputMessage.CommandArguments()),&product)
-	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, fmt.Sprintf("Parsed: %v\n",product))
-	b.Bot.Send(msg)
+	/*msg := tgbotapi.NewMessage(inputMessage.Chat.ID, fmt.Sprintf("Parsed: %v\n",product))
+	b.Bot.Send(msg)*/
+	if err:=(product==models.Product{});err{
+		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Ошибка при чтении полей: невалидные данные")
+		b.Bot.Send(msg)
+		return
+	}
 	err := b.ProductRepository.CreateProduct(product)
 	if err!=nil{
 		log.Fatal(err)
@@ -82,6 +87,9 @@ func (b *Bot) Create(inputMessage *tgbotapi.Message){
 		b.Bot.Send(msg)
 		return
 	}
+	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Товар успешно создан")
+	b.Bot.Send(msg)
+	return
 }
 
 func (b *Bot) List(inputMessage *tgbotapi.Message) {
