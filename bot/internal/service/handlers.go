@@ -1,4 +1,4 @@
-package telegram
+package service
 
 import (
 	"encoding/json"
@@ -49,40 +49,46 @@ func (b *Bot) Help(inputMessage *tgbotapi.Message) error {
 	return err
 }
 
-func (b *Bot) Get(inputMessage *tgbotapi.Message) error {
+func (b *Bot) Get(inputMessage *tgbotapi.Message) {
 	args := inputMessage.CommandArguments()
 
 	id, err := strconv.Atoi(args)
 	if err != nil {
 		log.Println("Wrong args ", args)
-		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Ошибка при получении товара: Некорректный id")
+		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Некорректный id")
 		b.Bot.Send(msg)
 	}
 
-	product, err := b.ProductRepository.GetProductById(int64(id))
+	product, err := b.ProductRepository.GetProductById(int(id))
 	if err != nil {
 		log.Printf("Fail to get product with id %d: %v", id, err)
-		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, fmt.Sprintf("Fail to get product with id %d: %v", id, err))
+		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, fmt.Sprintf("Ошибка получения товара с id %d: %v", id, err))
 		b.Bot.Send(msg)
 	}
-	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, product)
+
+	if (product==models.Product{}){
+		log.Printf("Товара с id=%v не существует", id)
+		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, fmt.Sprintf("Товара с id=%v не существует", id))
+		b.Bot.Send(msg)
+		return
+	}
+	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, fmt.Sprint(product))
 	b.Bot.Send(msg)
-	return nil
+	return
 }
 
 func (b *Bot) Create(inputMessage *tgbotapi.Message){
 	product:=models.Product{}
 	json.Unmarshal([]byte(inputMessage.CommandArguments()),&product)
-	/*msg := tgbotapi.NewMessage(inputMessage.Chat.ID, fmt.Sprintf("Parsed: %v\n",product))
-	b.Bot.Send(msg)*/
+
 	if err:=(product==models.Product{});err{
 		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Ошибка при чтении полей: невалидные данные")
 		b.Bot.Send(msg)
 		return
 	}
-	err := b.ProductRepository.CreateProduct(product)
+	err := b.ProductRepository.CreateProduct(&product)
 	if err!=nil{
-		log.Fatal(err)
+		log.Println(err)
 		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Ошибка: "+err.Error())
 		b.Bot.Send(msg)
 		return
@@ -101,7 +107,7 @@ func (b *Bot) List(inputMessage *tgbotapi.Message) {
 	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, str)
 	b.Bot.Send(msg)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
 	return

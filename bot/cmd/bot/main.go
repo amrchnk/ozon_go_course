@@ -4,7 +4,7 @@ import (
 	"github.com/amrchnk/ozon_go_course/bot/internal/config"
 	"github.com/amrchnk/ozon_go_course/bot/internal/repository"
 	"github.com/amrchnk/ozon_go_course/bot/internal/repository/boltDB"
-	telegram "github.com/amrchnk/ozon_go_course/bot/internal/service/telegram"
+	telegram "github.com/amrchnk/ozon_go_course/bot/internal/service"
 	"github.com/boltdb/bolt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"log"
@@ -15,7 +15,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//log.Println("ENV:",cfg)
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
 	if err != nil {
 		log.Fatal(err)
@@ -30,15 +29,12 @@ func main() {
 
 	productRepository:=boltDB.NewProductRepository(db)
 
-	tgBot:=telegram.NewBot(bot,productRepository)
+	tgBot:= telegram.NewBot(bot,productRepository)
 
 	err = tgBot.Start()
 	if err != nil {
 		log.Fatal(err)
 	}
-	/*go func(){
-
-	}()*/
 }
 
 func initDB(cfg *config.Config) (*bolt.DB, error) {
@@ -48,7 +44,7 @@ func initDB(cfg *config.Config) (*bolt.DB, error) {
 	}
 
 	if err := db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(repository.Product))
+		_, err := tx.CreateBucketIfNotExists([]byte(repository.Products))
 		if err != nil {
 			return err
 		}

@@ -1,4 +1,4 @@
-package telegram
+package service
 
 import (
 	"encoding/json"
@@ -38,13 +38,13 @@ func (b *Bot) Start() error {
 func(b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel){
 	defer func(){
 		if panicValue:=recover();panicValue!=nil{
-			fmt.Printf("recovered from panic: %v",panicValue)
+			log.Printf("recovered from panic: %v",panicValue)
 		}
 	}()
 
 	for update := range updates {
 		if update.CallbackQuery!=nil{
-			parsedData:=CommandData{}
+			parsedData:= CommandData{}
 			json.Unmarshal([]byte(update.CallbackQuery.Data),&parsedData)
 			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Parsed: %v\n",parsedData))
 			b.Bot.Send(msg)
@@ -57,7 +57,7 @@ func(b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel){
 
 		if update.Message!=nil{
 			if err:=b.handleCommand(update.Message);err!=nil{
-				log.Fatal(err)
+				log.Println(err)
 				return
 			}
 			continue

@@ -3,11 +3,10 @@ package boltDB
 import (
 	"encoding/binary"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"github.com/amrchnk/ozon_go_course/bot/internal/models"
 	"github.com/amrchnk/ozon_go_course/bot/internal/repository"
 	"github.com/boltdb/bolt"
-	"strconv"
 )
 
 type ProductRepository struct{
@@ -20,62 +19,59 @@ func NewProductRepository(db *bolt.DB)*ProductRepository{
 	}
 }
 
-func (r *ProductRepository)CreateProduct(product models.Product) error{
-	return r.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(repository.Product))
+func (r *ProductRepository)CreateProduct(product *models.Product) error{
+	err:=r.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(repository.Products))
 
 		id, _ := b.NextSequence()
-		product.Id = int(id)
-
+		product.Id = int(id)-1
 		buf, err := json.Marshal(product)
 		if err != nil {
 			return err
 		}
-
-		return b.Put(itob(product.Id), buf)
+		b.Put(intToByte(product.Id), buf)
+		fmt.Println(product)
+		return nil
 	})
+	return err
 }
 
-// itob returns an 8-byte big endian representation of v.
-func itob(v int) []byte {
+// intToByte returns an 8-byte big endian representation of v.
+func intToByte(v int) []byte {
 	b := make([]byte, 8)
 	binary.BigEndian.PutUint64(b, uint64(v))
 	return b
 }
 
 
-func (r *ProductRepository)GetProductById(productID int64) (string, error){
-	var token string
+func (r *ProductRepository)GetProductById(productID int) (models.Product, error){
+	product:=models.Product{}
 	err:=r.db.View(func(tx *bolt.Tx) error {
-		b:=tx.Bucket([]byte(repository.Product))
-		data:=b.Get(strconv.AppendInt(nil, productID, 10))
-		token=string(data)
+		b:=tx.Bucket([]byte(repository.Products))
+		data:=b.Get(intToByte(productID))
+		json.Unmarshal(data,&product)
 		return nil
 	})
 	if err!=nil{
-		return "",err
+		return product,err
 	}
 
-	if token==""{
-		return "",errors.New("product is not found")
-	}
-
-	return token,nil
+	return product,nil
 }
 
 func (r *ProductRepository)GetProductList()([]models.Product,error){
 	var products []models.Product
 	err:=r.db.View(func(tx *bolt.Tx) error {
 		// Assume bucket exists and has keys
-		b := tx.Bucket([]byte(repository.Product))
+		b := tx.Bucket([]byte(repository.Products))
 
-		c := b.Cursor()
-
-		for k, v := c.First(); k != nil; k, v = c.Next() {
+		b.ForEach(func(key, value []byte) error {
 			product:=models.Product{}
-			json.Unmarshal(v,&product)
+			json.Unmarshal(value,&product)
 			products=append(products,product)
-		}
+			return nil
+		})
+
 		return nil
 	})
 	return products,err

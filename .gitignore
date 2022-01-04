@@ -1,2 +1,5 @@
 .idea
 app.env
+
+bot.db
+bot.db.lock

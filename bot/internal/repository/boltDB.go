@@ -7,11 +7,11 @@ import (
 type Bucket string
 
 const (
-	Product Bucket = "product"
+	Products Bucket = "products"
 )
 
 type ProductRepository interface {
-	CreateProduct(product models.Product) error
-	GetProductById(productId int64)(string,error)
+	CreateProduct(product *models.Product) error
+	GetProductById(productId int)(models.Product,error)
 	GetProductList()([]models.Product,error)
 }
