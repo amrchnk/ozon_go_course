@@ -3,6 +3,7 @@ package boltDB
 import (
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/amrchnk/ozon_go_course/bot/internal/models"
 	"github.com/amrchnk/ozon_go_course/bot/internal/repository"
@@ -78,14 +79,12 @@ func (r *ProductRepository)GetProductList()([]models.Product,error){
 }
 
 func (r *ProductRepository)DeleteProductById(productId int)error{
-	err:=r.db.Update(func(tx *bolt.Tx) error {
+	return r.db.Update(func(tx *bolt.Tx) error {
 		b:=tx.Bucket([]byte(repository.Products))
-		err:=b.Delete(intToByte(productId))
-		if err!=nil{
-			return err
+		if err:=b.Get(intToByte(productId));err==nil{
+			return errors.New(fmt.Sprint("Товара нет в списке"))
 		}
-		return nil
-	})
 
-	return err
+		return b.Delete(intToByte(productId))
+	})
 }

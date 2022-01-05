@@ -117,9 +117,10 @@ func (b *Bot) Delete(inputMessage *tgbotapi.Message) {
 	err = b.ProductRepository.DeleteProductById(int(id))
 	if err != nil {
 		log.Printf("Fail to get product with id %d: %v", id, err)
-		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, fmt.Sprintf("Ошибка удаления"+
+		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, fmt.Sprintf("Ошибка удаления "+
 			"товара с id %d: %v", id, err))
 		b.Bot.Send(msg)
+		return
 	}
 
 	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, fmt.Sprintf("Продукт с id=%d успешно удален", id))
