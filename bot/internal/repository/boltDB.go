@@ -14,4 +14,5 @@ type ProductRepository interface {
 	CreateProduct(product *models.Product) error
 	GetProductById(productId int)(models.Product,error)
 	GetProductList()([]models.Product,error)
+	DeleteProductById(productId int)error
 }

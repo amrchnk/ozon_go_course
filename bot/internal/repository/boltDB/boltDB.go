@@ -44,11 +44,11 @@ func intToByte(v int) []byte {
 }
 
 
-func (r *ProductRepository)GetProductById(productID int) (models.Product, error){
+func (r *ProductRepository)GetProductById(productId int) (models.Product, error){
 	product:=models.Product{}
 	err:=r.db.View(func(tx *bolt.Tx) error {
 		b:=tx.Bucket([]byte(repository.Products))
-		data:=b.Get(intToByte(productID))
+		data:=b.Get(intToByte(productId))
 		json.Unmarshal(data,&product)
 		return nil
 	})
@@ -75,4 +75,17 @@ func (r *ProductRepository)GetProductList()([]models.Product,error){
 		return nil
 	})
 	return products,err
+}
+
+func (r *ProductRepository)DeleteProductById(productId int)error{
+	err:=r.db.Update(func(tx *bolt.Tx) error {
+		b:=tx.Bucket([]byte(repository.Products))
+		err:=b.Delete(intToByte(productId))
+		if err!=nil{
+			return err
+		}
+		return nil
+	})
+
+	return err
 }
