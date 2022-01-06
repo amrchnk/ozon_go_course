@@ -21,7 +21,7 @@ func NewProductRepository(db *bolt.DB)*ProductRepository{
 }
 
 func (r *ProductRepository)CreateProduct(product *models.Product) error{
-	err:=r.db.Update(func(tx *bolt.Tx) error {
+	return r.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(repository.Products))
 
 		id, _ := b.NextSequence()
@@ -34,7 +34,6 @@ func (r *ProductRepository)CreateProduct(product *models.Product) error{
 		fmt.Println(product)
 		return nil
 	})
-	return err
 }
 
 // intToByte returns an 8-byte big endian representation of v.
@@ -57,7 +56,7 @@ func (r *ProductRepository)GetProductById(productId int) (models.Product, error)
 		return product,err
 	}
 
-	return product,nil
+	return product,err
 }
 
 func (r *ProductRepository)GetProductList()([]models.Product,error){

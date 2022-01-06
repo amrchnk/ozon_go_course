@@ -134,15 +134,15 @@ func (b *Bot) List(inputMessage *tgbotapi.Message) {
 		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Список продуктов пуст. Добавьте новый продукт, используя команду /create")
 		b.Bot.Send(msg)
 	}
-	str := ""
-	for _, value := range products {
-		str += fmt.Sprintf("%v\n", value)
-	}
-	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, str)
+	callbackBody:="init:0"
+	text,markUp:=b.Pager(products,callbackBody)
+	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, text)
+	msg.ReplyMarkup = markUp
 	b.Bot.Send(msg)
 	if err != nil {
 		log.Println(err)
 		return
 	}
+
 	return
 }
