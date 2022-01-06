@@ -74,10 +74,12 @@ func ParseCallbackPagerData(callbackBody string, pagerData *PagerData) {
 	pagerData.CurrentPage, _ = strconv.Atoi(parsedData[1])
 }
 
-func GenerateTextForBotMessage(products []models.Product)string{
+func GenerateTextForBotMessage(products []models.Product) string {
 	str := ""
 	for _, value := range products {
-		str += fmt.Sprintf("%v\n", value)
+		if (value != models.Product{}) {
+			str += fmt.Sprintf("%v\n", value)
+		}
 	}
 	return str
 }
