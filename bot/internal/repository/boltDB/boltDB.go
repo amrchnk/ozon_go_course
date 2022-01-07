@@ -55,8 +55,27 @@ func (r *ProductRepository)GetProductById(productId int) (models.Product, error)
 	if err!=nil{
 		return product,err
 	}
-
 	return product,err
+}
+
+func (r *ProductRepository)UpdateProduct(product *models.Product) error{
+	err:=r.db.Update(func(tx *bolt.Tx) error {
+		b:=tx.Bucket([]byte(repository.Products))
+		if err:=b.Get(intToByte(product.Id));err==nil{
+			return errors.New(fmt.Sprint("Продукта нет в списке. Для добавления нового продукта воспользуйтесь командой /create"))
+		}
+		buf, err := json.Marshal(product)
+		if err != nil {
+			return err
+		}
+
+		b.Put(intToByte(product.Id), buf)
+		return nil
+	})
+	if err!=nil{
+		return err
+	}
+	return err
 }
 
 func (r *ProductRepository)GetProductList()([]models.Product,error){

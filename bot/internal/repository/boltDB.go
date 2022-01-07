@@ -15,4 +15,5 @@ type ProductRepository interface {
 	GetProductById(productId int)(models.Product,error)
 	GetProductList()([]models.Product,error)
 	DeleteProductById(productId int)error
+	UpdateProduct(product *models.Product) error
 }

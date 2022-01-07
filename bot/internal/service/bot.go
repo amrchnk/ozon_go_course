@@ -71,6 +71,8 @@ func (b *Bot)HandleCallback(query *tgbotapi.CallbackQuery){
 		msg.ReplyMarkup = &markup
 		b.Bot.Send(msg)
 		return
+	case "edit":
+
 	}
 }
 

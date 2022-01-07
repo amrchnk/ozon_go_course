@@ -14,6 +14,7 @@ const (
 	commandList   = "list"
 	commandGet    = "get"
 	commandCreate = "create"
+	commandEdit   = "edit"
 	commandDelete = "delete"
 )
 
@@ -28,6 +29,8 @@ func (b *Bot) handleCommand(message *tgbotapi.Message) error {
 		b.Get(message)
 	case commandCreate:
 		b.Create(message)
+	case commandEdit:
+		b.Edit(message)
 	case commandDelete:
 		b.Delete(message)
 	default:
@@ -46,7 +49,7 @@ func (b *Bot) Default(inputMessage *tgbotapi.Message) error {
 }
 
 func (b *Bot) Help(inputMessage *tgbotapi.Message) error {
-	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "/help - help\n/list - список продуктов\n/get {id} - получить информацию о продукте по его id" +
+	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "/help - help\n/list - список продуктов\n/get {id} - получить информацию о продукте по его id"+
 		"\n/create {product} - добавление нового продукта\n/delete {id} - удаление продукта по id")
 	_, err := b.Bot.Send(msg)
 
@@ -84,14 +87,20 @@ func (b *Bot) Get(inputMessage *tgbotapi.Message) {
 
 func (b *Bot) Create(inputMessage *tgbotapi.Message) {
 	product := models.Product{}
-	json.Unmarshal([]byte(inputMessage.CommandArguments()), &product)
+	err:=json.Unmarshal([]byte(inputMessage.CommandArguments()), &product)
 
+	if err!=nil{
+		log.Printf("Ошибка при чтении продукта: %v",err)
+		msg:=tgbotapi.NewMessage(inputMessage.Chat.ID,fmt.Sprintf("Ошибка при чтении продукта: %v",err))
+		b.Bot.Send(msg)
+		return
+	}
 	if err := (product == models.Product{}); err {
 		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Ошибка при чтении полей: невалидные данные")
 		b.Bot.Send(msg)
 		return
 	}
-	err := b.ProductRepository.CreateProduct(&product)
+	err = b.ProductRepository.CreateProduct(&product)
 	if err != nil {
 		log.Println(err)
 		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Ошибка: "+err.Error())
@@ -134,8 +143,8 @@ func (b *Bot) List(inputMessage *tgbotapi.Message) {
 		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Список продуктов пуст. Добавьте новый продукт, используя команду /create")
 		b.Bot.Send(msg)
 	}
-	callbackBody:="init:0"
-	text,markUp:=b.Pager(products,callbackBody)
+	callbackBody := "init:0"
+	text, markUp := b.Pager(products, callbackBody)
 	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, text)
 	msg.ReplyMarkup = markUp
 	b.Bot.Send(msg)
@@ -143,6 +152,41 @@ func (b *Bot) List(inputMessage *tgbotapi.Message) {
 		log.Println(err)
 		return
 	}
+	return
+}
 
+func (b *Bot) Edit(inputMessage *tgbotapi.Message) {
+	args := inputMessage.CommandArguments()
+	if args==""{
+		log.Println("Ошибка: пустая строка")
+		msg:=tgbotapi.NewMessage(inputMessage.Chat.ID,fmt.Sprint("Ошибка: пустая строка"))
+		b.Bot.Send(msg)
+		return
+	}
+	product := models.Product{}
+	err:=json.Unmarshal([]byte(inputMessage.CommandArguments()), &product)
+
+	if err!=nil{
+		log.Printf("Ошибка при чтении продукта: %v",err)
+		msg:=tgbotapi.NewMessage(inputMessage.Chat.ID,fmt.Sprintf("Ошибка при чтении продукта: %v",err))
+		b.Bot.Send(msg)
+		return
+	}
+
+	if err := (product == models.Product{}); err {
+		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Ошибка при чтении полей: невалидные данные")
+		b.Bot.Send(msg)
+		return
+	}
+
+	err = b.ProductRepository.UpdateProduct(&product)
+	if err != nil {
+		log.Println(err)
+		msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Ошибка: "+err.Error())
+		b.Bot.Send(msg)
+		return
+	}
+	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Информация о продукте успешно изменена")
+	b.Bot.Send(msg)
 	return
 }
